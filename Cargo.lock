@@ -595,7 +595,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "voodoo"
 version = "0.0.1"
-source = "git+https://github.com/cogciprocate/voodoo#098f02659618b20c7bb960fa1f15fcc6d464e03d"
+source = "git+https://github.com/cogciprocate/voodoo#1a38baf9dd6c6c7e3f3a4ff28b22e2b69fac1a9b"
 dependencies = [
  "bitflags 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cgmath 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
