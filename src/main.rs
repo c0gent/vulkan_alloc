@@ -8,9 +8,9 @@ use voo::*;
 use voo::Result as VooResult;
 use voodoo_winit::winit::{EventsLoop, WindowBuilder, Window};
 
-#[cfg(debug_assertions)]
-pub const ENABLE_VALIDATION_LAYERS: bool = true;
-#[cfg(not(debug_assertions))]
+// #[cfg(debug_assertions)]
+// pub const ENABLE_VALIDATION_LAYERS: bool = true;
+// #[cfg(not(debug_assertions))]
 pub const ENABLE_VALIDATION_LAYERS: bool = false;
 
 // static REQUIRED_INSTANCE_EXTENSIONS: &[&[u8]] = &[
