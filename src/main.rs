@@ -159,8 +159,16 @@ fn create_test_buffers(device: &Device, flags: MemoryPropertyFlags)
         let memory_requirements = buffer.memory_requirements().clone();
         let memory_type_index = device.memory_type_index(memory_requirements.memory_type_bits(),
             flags)?;
-        let buffer_memory = DeviceMemory::new(device.clone(), memory_requirements.size(),
-            memory_type_index)?;
+        let buffer_memory_res = DeviceMemory::new(device.clone(), memory_requirements.size(),
+            memory_type_index);
+
+        let buffer_memory = match buffer_memory_res {
+            Ok(bm) => bm,
+            Err(_err) => {
+                println!("Error creating buffer memory (probably oom).");
+                continue;
+            },
+        };
 
         let duration = time::Instant::now() - current_start;
 
