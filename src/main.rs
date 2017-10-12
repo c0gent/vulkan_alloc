@@ -68,8 +68,6 @@ fn init_instance() -> VooResult<Instance> {
         .build(loader, ENABLE_VALIDATION_LAYERS)
 }
 
-
-
 /// Returns true if the specified physical device has the required features,
 /// extensions, queue families and if the supported swap chain has the correct
 /// presentation modes.
@@ -123,9 +121,10 @@ fn create_device(_instance: Instance, surface: &SurfaceKhr, physical_device: Phy
     let queue_family_idx = queue::queue_families(surface,
         &physical_device, queue_familiy_flags)?.family_idxs()[0] as u32;
 
+    let queue_priorities = [1.0];
     let queue_create_info = DeviceQueueCreateInfo::builder()
         .queue_family_index(queue_family_idx)
-        .queue_priorities(&[1.0])
+        .queue_priorities(&queue_priorities)
         .build();
 
     let features = PhysicalDeviceFeatures::builder()
