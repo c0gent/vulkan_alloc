@@ -1,0 +1,8 @@
+[package]
+name = "vulkan_alloc"
+version = "0.1.0"
+authors = ["nsan1129 <nsan1129@gmail.com>"]
+
+[dependencies]
+voodoo = { git = "https://github.com/cogciprocate/voodoo" }
+smallvec = "*"
