@@ -1,9 +1,7 @@
 extern crate voodoo as voo;
-extern crate smallvec;
 
 use std::time;
 use std::ffi::{CStr, CString};
-use smallvec::SmallVec;
 use voo::*;
 use voo::Result as VooResult;
 use voodoo_winit::winit::{EventsLoop, WindowBuilder, Window};
@@ -34,7 +32,7 @@ fn init_window() -> (Window, EventsLoop) {
 
 /// Returns the list of layer names to be enabled.
 fn enabled_layer_names<'ln>(loader: &Loader)
-        -> SmallVec<[&'ln CStr; 16]> {
+        -> Vec<&'ln CStr> {
     if ENABLE_VALIDATION_LAYERS && !loader.check_validation_layer_support() {
         panic!("Unable to enable validation layers.");
     }
@@ -42,7 +40,7 @@ fn enabled_layer_names<'ln>(loader: &Loader)
          (loader.validation_layer_names()).iter().map(|lyr_name|
             unsafe { CStr::from_ptr(lyr_name.as_ptr() as *const i8) }).collect()
     } else {
-        SmallVec::new()
+        Vec::new()
     }
 }
 
@@ -75,7 +73,7 @@ fn device_is_suitable(_instance: &Instance, surface: &SurfaceKhr,
         physical_device: &PhysicalDevice, queue_family_flags: QueueFlags) -> VooResult<bool> {
     let device_features = physical_device.features()?;
 
-    let reqd_exts: SmallVec<[_; 16]> = (&REQUIRED_DEVICE_EXTENSIONS[..]).iter().map(|ext_name| {
+    let reqd_exts: Vec<_> = (&REQUIRED_DEVICE_EXTENSIONS[..]).iter().map(|ext_name| {
         CStr::from_bytes_with_nul(ext_name).expect("invalid required extension name")
     }).collect();
 

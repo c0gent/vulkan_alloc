@@ -5,4 +5,3 @@ authors = ["nsan1129 <nsan1129@gmail.com>"]
 
 [dependencies]
 voodoo = { git = "https://github.com/cogciprocate/voodoo" }
-smallvec = "*"
