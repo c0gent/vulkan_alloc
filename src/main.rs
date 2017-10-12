@@ -3,18 +3,10 @@ extern crate voodoo as voo;
 use std::time;
 use std::ffi::{CStr, CString};
 use voo::*;
-use voo::Result as VooResult;
+use voo::Result as VdResult;
 use voodoo_winit::winit::{EventsLoop, WindowBuilder, Window};
 
-// #[cfg(debug_assertions)]
-// pub const ENABLE_VALIDATION_LAYERS: bool = true;
-// #[cfg(not(debug_assertions))]
 pub const ENABLE_VALIDATION_LAYERS: bool = false;
-
-// static REQUIRED_INSTANCE_EXTENSIONS: &[&[u8]] = &[
-//     b"VK_KHR_surface\0",
-//     b"VK_KHR_win32_surface\0",
-// ];
 
 static REQUIRED_DEVICE_EXTENSIONS: &[&[u8]] = &[
     b"VK_KHR_swapchain\0",
@@ -30,24 +22,10 @@ fn init_window() -> (Window, EventsLoop) {
     (window, events_loop)
 }
 
-/// Returns the list of layer names to be enabled.
-fn enabled_layer_names<'ln>(loader: &Loader)
-        -> Vec<&'ln CStr> {
-    if ENABLE_VALIDATION_LAYERS && !loader.check_validation_layer_support() {
-        panic!("Unable to enable validation layers.");
-    }
-    if ENABLE_VALIDATION_LAYERS {
-         (loader.validation_layer_names()).iter().map(|lyr_name|
-            unsafe { CStr::from_ptr(lyr_name.as_ptr() as *const i8) }).collect()
-    } else {
-        Vec::new()
-    }
-}
-
-/// Initializes a loader and returns a new instance.
-fn init_instance() -> VooResult<Instance> {
-    let app_name = CString::new("Hello Triangle")?;
-    let eng_name = CString::new("None")?;
+/// Initializes and returns a new loader and instance.
+fn init_instance() -> VdResult<Instance> {
+    let app_name = CString::new("Hello!")?;
+    let eng_name = CString::new("Engine")?;
 
     let app_info = ApplicationInfo::builder()
         .application_name(&app_name)
@@ -61,17 +39,16 @@ fn init_instance() -> VooResult<Instance> {
 
     Instance::builder()
         .application_info(&app_info)
-        .enabled_layer_names(enabled_layer_names(&loader).as_slice())
-        .enabled_extensions(loader.instance_extensions().as_slice())
-        .build(loader, ENABLE_VALIDATION_LAYERS)
+        .enabled_extensions(&loader.enumerate_instance_extension_properties()?)
+        .build(loader)
 }
 
 /// Returns true if the specified physical device has the required features,
 /// extensions, queue families and if the supported swap chain has the correct
 /// presentation modes.
-fn device_is_suitable(_instance: &Instance, surface: &SurfaceKhr,
-        physical_device: &PhysicalDevice, queue_family_flags: QueueFlags) -> VooResult<bool> {
-    let device_features = physical_device.features()?;
+fn device_is_suitable(surface: &SurfaceKhr,
+        physical_device: &PhysicalDevice, queue_family_flags: QueueFlags) -> VdResult<bool> {
+    let device_features = physical_device.features();
 
     let reqd_exts: Vec<_> = (&REQUIRED_DEVICE_EXTENSIONS[..]).iter().map(|ext_name| {
         CStr::from_bytes_with_nul(ext_name).expect("invalid required extension name")
@@ -99,10 +76,10 @@ fn device_is_suitable(_instance: &Instance, surface: &SurfaceKhr,
 /// Returns a physical device from the list of available physical devices if
 /// it meets the criteria specified in the above function.
 fn choose_physical_device(instance: &Instance, surface: &SurfaceKhr,
-        queue_family_flags: QueueFlags) -> VooResult<PhysicalDevice> {
+        queue_family_flags: QueueFlags) -> VdResult<PhysicalDevice> {
     let mut preferred_device = None;
-    for device in instance.physical_devices() {
-        if device_is_suitable(instance, surface, &device, queue_family_flags)? {
+    for device in instance.physical_devices()? {
+        if device_is_suitable(surface, &device, queue_family_flags)? {
             preferred_device = Some(device);
             break;
         }
@@ -115,7 +92,7 @@ fn choose_physical_device(instance: &Instance, surface: &SurfaceKhr,
 }
 
 fn create_device(_instance: Instance, surface: &SurfaceKhr, physical_device: PhysicalDevice,
-        queue_familiy_flags: QueueFlags) -> VooResult<Device> {
+        queue_familiy_flags: QueueFlags) -> VdResult<Device> {
     let queue_family_idx = queue::queue_families(surface,
         &physical_device, queue_familiy_flags)?.family_idxs()[0] as u32;
 
@@ -137,7 +114,7 @@ fn create_device(_instance: Instance, surface: &SurfaceKhr, physical_device: Phy
 }
 
 fn create_test_buffers(device: &Device, flags: MemoryPropertyFlags)
-        -> VooResult<(Vec<Buffer>, Vec<DeviceMemory>)> {
+        -> VdResult<(Vec<Buffer>, Vec<DeviceMemory>)> {
     let mut current_start;
 
     let mut buffers = Vec::with_capacity(16);
@@ -182,7 +159,7 @@ fn create_test_buffers(device: &Device, flags: MemoryPropertyFlags)
 }
 
 
-fn test_alloc() -> VooResult<()> {
+fn test_alloc() -> VdResult<()> {
 
     let instance = init_instance()?;
     let (window, _events_loop) = init_window();
@@ -207,5 +184,4 @@ fn test_alloc() -> VooResult<()> {
 fn main() {
     println!("Beginning buffer test.");
     test_alloc().unwrap();
-
 }
