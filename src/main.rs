@@ -8,9 +8,7 @@ use voo::Result as VdResult;
 
 pub const ENABLE_VALIDATION_LAYERS: bool = false;
 
-static REQUIRED_DEVICE_EXTENSIONS: &[&[u8]] = &[
-    b"VK_KHR_swapchain\0",
-];
+static REQUIRED_DEVICE_EXTENSIONS: &[&[u8]] = &[];
 
 
 /// Initializes and returns a new loader and instance.
