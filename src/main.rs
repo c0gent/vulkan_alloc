@@ -1,26 +1,18 @@
 extern crate voodoo as voo;
 
 use std::time;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use voo::*;
 use voo::Result as VdResult;
 
 
-pub const ENABLE_VALIDATION_LAYERS: bool = false;
-
-static REQUIRED_DEVICE_EXTENSIONS: &[&[u8]] = &[];
-
-
 /// Initializes and returns a new loader and instance.
 fn init_instance() -> VdResult<Instance> {
-    let app_name = CString::new("Hello!")?;
-    let eng_name = CString::new("Engine")?;
+    let app_name = CString::new("Benchmark")?;
 
     let app_info = ApplicationInfo::builder()
         .application_name(&app_name)
         .application_version((1, 0, 0))
-        .engine_name(&eng_name)
-        .engine_version((1, 0, 0))
         .api_version((1, 0, 0))
         .build();
 
@@ -28,42 +20,20 @@ fn init_instance() -> VdResult<Instance> {
 
     Instance::builder()
         .application_info(&app_info)
-        .enabled_extensions(&loader.enumerate_instance_extension_properties()?)
         .build(loader)
 }
 
-/// Returns true if the specified physical device has the required features,
-/// extensions, queue families and if the supported swap chain has the correct
-/// presentation modes.
-fn device_is_suitable(physical_device: &PhysicalDevice) -> VdResult<bool> {
-    let reqd_exts: Vec<_> = (&REQUIRED_DEVICE_EXTENSIONS[..]).iter().map(|ext_name| {
-        CStr::from_bytes_with_nul(ext_name).expect("invalid required extension name")
-    }).collect();
-
-    let extensions_supported = physical_device.verify_extension_support(&reqd_exts[..])?;
-    Ok(extensions_supported)
-}
-
 /// Returns a physical device from the list of available physical devices if
-/// it meets the criteria specified in the above function.
-fn choose_physical_device(instance: &Instance)
-        -> VdResult<PhysicalDevice> {
-    let mut preferred_device = None;
-    for device in instance.physical_devices()? {
-        if device_is_suitable(&device)? {
-            preferred_device = Some(device);
-            break;
-        }
-    }
-    if let Some(preferred_device) = preferred_device {
-        Ok(preferred_device)
+fn choose_physical_device(instance: &Instance, device_idx: usize) -> VdResult<PhysicalDevice> {
+    let mut devices = instance.physical_devices()?;
+    if devices.len() > device_idx {
+        Ok(devices.swap_remove(device_idx))
     } else {
-        panic!("Failed to find a suitable device.");
+        panic!("Invalid physical device index");
     }
 }
 
-fn create_device(physical_device: PhysicalDevice)
-        -> VdResult<Device> {
+fn create_device(physical_device: PhysicalDevice) -> VdResult<Device> {
     let queue_priorities = [1.0];
     let queue_create_info = DeviceQueueCreateInfo::builder()
         .queue_family_index(0)
@@ -76,7 +46,6 @@ fn create_device(physical_device: PhysicalDevice)
 
     Device::builder()
         .queue_create_infos(&[queue_create_info.clone()])
-        .enabled_extension_names(REQUIRED_DEVICE_EXTENSIONS)
         .enabled_features(&features)
         .build(physical_device)
 }
@@ -126,10 +95,9 @@ fn create_test_buffers(device: &Device, flags: MemoryPropertyFlags)
     Ok((buffers, allocs))
 }
 
-
 fn test_alloc() -> VdResult<()> {
     let instance = init_instance()?;
-    let physical_device = choose_physical_device(&instance)?;
+    let physical_device = choose_physical_device(&instance, 0)?;
     let device = create_device(physical_device)?;
 
     println!("Host:");
@@ -144,6 +112,6 @@ fn test_alloc() -> VdResult<()> {
 }
 
 fn main() {
-    println!("Beginning buffer test.");
+    println!("Beginning buffer test with first available device.");
     test_alloc().unwrap();
 }
