@@ -4,7 +4,7 @@ use std::time;
 use std::ffi::{CStr, CString};
 use voo::*;
 use voo::Result as VdResult;
-use voodoo_winit::winit::{EventsLoop, WindowBuilder, Window};
+
 
 pub const ENABLE_VALIDATION_LAYERS: bool = false;
 
@@ -12,15 +12,6 @@ static REQUIRED_DEVICE_EXTENSIONS: &[&[u8]] = &[
     b"VK_KHR_swapchain\0",
 ];
 
-
-/// Initializes the window and event loop.
-fn init_window() -> (Window, EventsLoop) {
-    let events_loop = EventsLoop::new();
-    let window = WindowBuilder::new()
-        .with_title("Voodoo - Hello Triangle")
-        .build(&events_loop).unwrap();
-    (window, events_loop)
-}
 
 /// Initializes and returns a new loader and instance.
 fn init_instance() -> VdResult<Instance> {
@@ -46,40 +37,22 @@ fn init_instance() -> VdResult<Instance> {
 /// Returns true if the specified physical device has the required features,
 /// extensions, queue families and if the supported swap chain has the correct
 /// presentation modes.
-fn device_is_suitable(surface: &SurfaceKhr,
-        physical_device: &PhysicalDevice, queue_family_flags: QueueFlags) -> VdResult<bool> {
-    let device_features = physical_device.features();
-
+fn device_is_suitable(physical_device: &PhysicalDevice) -> VdResult<bool> {
     let reqd_exts: Vec<_> = (&REQUIRED_DEVICE_EXTENSIONS[..]).iter().map(|ext_name| {
         CStr::from_bytes_with_nul(ext_name).expect("invalid required extension name")
     }).collect();
 
-    let extensions_supported = physical_device.verify_extensions_support(&reqd_exts[..])?;
-
-    let mut swap_chain_adequate = false;
-    if extensions_supported {
-        let swap_chain_details = SwapchainSupportDetails::new(surface,
-            &physical_device)?;
-        swap_chain_adequate = !swap_chain_details.formats.is_empty() &&
-            !swap_chain_details.present_modes.is_empty()
-    }
-
-    let queue_family_indices = queue::queue_families(surface,
-        &physical_device, queue_family_flags)?;
-
-    Ok(queue_family_indices.is_complete() &&
-        extensions_supported &&
-        swap_chain_adequate &&
-        device_features.sampler_anisotropy())
+    let extensions_supported = physical_device.verify_extension_support(&reqd_exts[..])?;
+    Ok(extensions_supported)
 }
 
 /// Returns a physical device from the list of available physical devices if
 /// it meets the criteria specified in the above function.
-fn choose_physical_device(instance: &Instance, surface: &SurfaceKhr,
-        queue_family_flags: QueueFlags) -> VdResult<PhysicalDevice> {
+fn choose_physical_device(instance: &Instance)
+        -> VdResult<PhysicalDevice> {
     let mut preferred_device = None;
     for device in instance.physical_devices()? {
-        if device_is_suitable(surface, &device, queue_family_flags)? {
+        if device_is_suitable(&device)? {
             preferred_device = Some(device);
             break;
         }
@@ -91,14 +64,11 @@ fn choose_physical_device(instance: &Instance, surface: &SurfaceKhr,
     }
 }
 
-fn create_device(_instance: Instance, surface: &SurfaceKhr, physical_device: PhysicalDevice,
-        queue_familiy_flags: QueueFlags) -> VdResult<Device> {
-    let queue_family_idx = queue::queue_families(surface,
-        &physical_device, queue_familiy_flags)?.family_idxs()[0] as u32;
-
+fn create_device(physical_device: PhysicalDevice)
+        -> VdResult<Device> {
     let queue_priorities = [1.0];
     let queue_create_info = DeviceQueueCreateInfo::builder()
-        .queue_family_index(queue_family_idx)
+        .queue_family_index(0)
         .queue_priorities(&queue_priorities)
         .build();
 
@@ -160,15 +130,9 @@ fn create_test_buffers(device: &Device, flags: MemoryPropertyFlags)
 
 
 fn test_alloc() -> VdResult<()> {
-
     let instance = init_instance()?;
-    let (window, _events_loop) = init_window();
-    let surface = voodoo_winit::create_surface(instance.clone(), &window)?;
-    let queue_family_flags = QueueFlags::GRAPHICS;
-    let physical_device = choose_physical_device(&instance, &surface,
-        queue_family_flags)?;
-    let device = create_device(instance.clone(), &surface, physical_device,
-        queue_family_flags)?;
+    let physical_device = choose_physical_device(&instance)?;
+    let device = create_device(physical_device)?;
 
     println!("Host:");
     let (_test_buffers, _test_buffer_allocs) = create_test_buffers(&device,
